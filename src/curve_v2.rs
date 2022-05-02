@@ -6,6 +6,58 @@ const A: i128 = 100;
 const PRECISION: i128 = 100000;
 const BETA: i128 = 1000;
 const DIV: i128 = 10;
+const LOG_10_2_5: i128 = 30103; // log_10_2 * 10^5
+const TEN_5: i128 = 100000;
+
+//const TAYLOR:[i128] = 
+const LOG_10_2: f64 = 0.69314718;
+
+/*
+pub fn get_float_taylor(x: f64) -> f64 {
+    let coeffs: [f64; 9] = [0.0, 1.0, 0.5, 0.16666667, 0.04166667, 0.0083333, 0.001388889, 0.00019841, 0.00002480159];
+    let signs: [f64; 9] = [1.0, -1.0, 1.0,       -1.0,        1.0,       -1.0,        1.0,       -1.0,           1.0];
+    
+
+    let sgn: f64 = -1.0;
+
+    let mut sum: f64 = 1.0;
+    let mut prod: f64 = 0.0;
+    let mut sm: f64 = 1.0;
+
+    for i in 1..9 {
+        sm *= x * LOG_10_2;
+       
+        sum += sm * coeffs[i]  * signs[i];
+
+        println!("sign = {}, i = {}, sum = {}", signs[i], i, sum);
+    }
+
+    return sum;
+}
+
+pub fn get_int_taylor(a: i128, x: i128) -> i128 {
+    let coeffs: [i128; 9] = [    0,     1,     5,  16666667,   4166667,    83333,    1388889,     19841,     2480159];
+    let powers: [i128; 9] = [    1,     1,    10, 100000000, 100000000, 10000000, 1000000000, 100000000, 10000000000];
+    let signs: [i128; 9] =  [    1,    -1,     1,        -1,         1,       -1,          1,        -1,           1];
+    let denom: [i128; 9] =  [40320, 40320, 20160,      6720,       1680,      336,        56,         8,           1];
+
+    let mut sum: i128 = denom[0];
+    let mut prod: i128 = 1;
+
+    for i in 1..9 {
+        prod *= x * LOG_10_2_5 / a;
+       
+        sum += prod * coeffs[i]  * signs[i] * denom[i] / powers[i];
+
+        println!("sign = {}, i = {}, sum = {}", signs[i], i, sum);
+    }
+
+    return sum;
+
+}
+*/
+
+
 
 pub fn get_sqrt(n: i128) -> i128 {
     let mut x: i128 = n;
