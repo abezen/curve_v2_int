@@ -2,60 +2,11 @@ extern crate num;
 use num::abs;
 
 
-const A: i128 = 100;
+const A: i128 = 200;
 const PRECISION: i128 = 100000;
-const BETA: i128 = 1000;
+const BETA: i128 = 100000;
 const DIV: i128 = 10;
-const LOG_10_2_5: i128 = 30103; // log_10_2 * 10^5
-const TEN_5: i128 = 100000;
-
-//const TAYLOR:[i128] = 
-const LOG_10_2: f64 = 0.69314718;
-
-/*
-pub fn get_float_taylor(x: f64) -> f64 {
-    let coeffs: [f64; 9] = [0.0, 1.0, 0.5, 0.16666667, 0.04166667, 0.0083333, 0.001388889, 0.00019841, 0.00002480159];
-    let signs: [f64; 9] = [1.0, -1.0, 1.0,       -1.0,        1.0,       -1.0,        1.0,       -1.0,           1.0];
-    
-
-    let sgn: f64 = -1.0;
-
-    let mut sum: f64 = 1.0;
-    let mut prod: f64 = 0.0;
-    let mut sm: f64 = 1.0;
-
-    for i in 1..9 {
-        sm *= x * LOG_10_2;
-       
-        sum += sm * coeffs[i]  * signs[i];
-
-        println!("sign = {}, i = {}, sum = {}", signs[i], i, sum);
-    }
-
-    return sum;
-}
-
-pub fn get_int_taylor(a: i128, x: i128) -> i128 {
-    let coeffs: [i128; 9] = [    0,     1,     5,  16666667,   4166667,    83333,    1388889,     19841,     2480159];
-    let powers: [i128; 9] = [    1,     1,    10, 100000000, 100000000, 10000000, 1000000000, 100000000, 10000000000];
-    let signs: [i128; 9] =  [    1,    -1,     1,        -1,         1,       -1,          1,        -1,           1];
-    let denom: [i128; 9] =  [40320, 40320, 20160,      6720,       1680,      336,        56,         8,           1];
-
-    let mut sum: i128 = denom[0];
-    let mut prod: i128 = 1;
-
-    for i in 1..9 {
-        prod *= x * LOG_10_2_5 / a;
-       
-        sum += prod * coeffs[i]  * signs[i] * denom[i] / powers[i];
-
-        println!("sign = {}, i = {}, sum = {}", signs[i], i, sum);
-    }
-
-    return sum;
-
-}
-*/
+// const TEN_5: i128 = 100000;
 
 
 
@@ -111,6 +62,8 @@ pub fn get_initial_bisection_values_d(x0: i128, x1: i128) -> (i128, i128) {
     let mut f_left: i128 = get_function_value_1(d_left, x0, x1);
     let mut f_right: i128 = get_function_value_1(d_right, x0, x1);
 
+    println!("d left = {}, d right = {}", f_left, f_right);
+
     
     while f_left * f_right > 0 {
         d_left -= d_step;
@@ -123,7 +76,12 @@ pub fn get_initial_bisection_values_d(x0: i128, x1: i128) -> (i128, i128) {
 }
 
 pub fn get_b(d: i128, x0: i128, x1: i128) -> i128 {
-    let bk0: i128 = ( 4 * BETA * x0 * x1 ) / (d * d);
+    // let rem: i128 = ( 4 * BETA * x0 * x1 ) % (d * d);
+    //let bk0: i128 = ( 4 * BETA * x0 * x1 ) / (d * d);
+    let bk0: i128 = ( 4 * BETA * x0 * x1 + d * d / 2) / (d * d);
+
+   // println!("bk0 = {}, bk1 = {}", bk0, bk1);
+
     let b: i128 = 1 + BETA - bk0;
     return b * b;  
 }
@@ -131,7 +89,7 @@ pub fn get_b(d: i128, x0: i128, x1: i128) -> i128 {
 pub fn get_function_value(d: i128, x0: i128, x1: i128) -> i128 {
     let b: i128 = get_b(d, x0, x1);
     let x01: i128 = x0 * x1;
-    let t1: i128 = (4 * x01 * (x0 + x1 -d))/d - b * (x01 - d * d);
+    let t1: i128 = (4 * x01 * (x0 + x1 -d) + d /2)/d - b * (x01 - d * d);
     return t1 / b;
     
 }
@@ -179,32 +137,82 @@ pub fn get_function_value_1(d: i128, x0: i128, x1: i128) -> i128 {
     
 }
 
+pub fn get_function_value_2(da: i128, x0a: i128, x1a: i128) -> i128 {
+    let pow: i128 = 1000000;
+    let d: i128 =  da / pow;
+    let x0: i128 = x0a / pow;
+    let x1: i128 = x1a  / pow;
+    let num: i128 = 16 * x0 * x1 * A * d * d * d * (x0 + x1 - d);
+    let denum1: i128 = d * d + BETA * d * d - BETA* 4 * x0 * x1;
+    let denum: i128 = denum1 * denum1 ;
+
+     let f: i128 = num  / denum  + x0 * x1 - d * d  /4 ;
+    // let f: i128 = (4 * num + denum * 4 * x0 * x1 - denum * d * d) / (4 * denum);
+    return f;
+    
+}
+
+pub fn get_function_value_3(da: i128, x0a: i128, x1a: i128) -> i128 {
+    let pow: i128 = 10000;
+    let d: i128 =  da / pow;
+    let x0: i128 = x0a / pow;
+    let x1: i128 = x1a  / pow;
+    let num: i128 = 4 * A * x0 * x1 * d * (x0 + x1 - d);
+    let denum1: i128 = d * d + BETA * d * d - 4 * BETA * x0 * x1;
+    let denum2: i128;
+    if 4 * x0 * x1 / (d * d) == 1{
+        denum2 = 1}
+    else {
+        denum2 = 1 +  BETA - 4 * x0 * x1 * BETA / (d * d);
+    } 
+
+    if denum1 == 0 || denum2 == 0 {
+        println!("denum1 = {}, denum2 = {}", denum1, denum2);
+    }
+    let denum: i128 = denum1 * denum2 ;
+
+    let f: i128 = num  / denum  + x0 * x1 - d * d  /4 ;
+    // let f: i128 = (4 * num + denum * 4 * x0 * x1 - denum * d * d) / (4 * denum);
+    return f;
+    
+}
+
+
+
 pub fn get_ask_amount_bisection(op1: i128, of1: i128, ap1: i128) -> i128 {
     let op: i128 = op1/DIV;
     let ap: i128 = ap1/DIV;
     let of: i128 = of1 / DIV;
+
+    println!("op = {}, ap = {}", op, ap);
     let d: i128 = get_function_bisection_zero_d(op, ap);
 
-    let ask_amnt: i128 = get_function_bisection_zero_x(d, op+of, ap);
+    println!("d = {}", d);
 
-    return ask_amnt * DIV;
+    let new_ask_pool: i128 = get_function_bisection_zero_x(d, op+of);
+
+    println!("new ask pool = {}, ask_amount = {}",new_ask_pool, ap - new_ask_pool);
+
+    return (ap - new_ask_pool) * DIV;
 
 }
 
-pub fn get_function_bisection_zero_x(d: i128, x0: i128, x1: i128) -> i128 {
+
+pub fn get_function_bisection_zero_x(d: i128, x0: i128) -> i128 {
     
-       let mut f_mid: i128;
+    let mut f_mid: i128;
    
-       let (mut x1_left, mut x1_right) = get_initial_bisection_values_d(x0, x1);
+       let (mut x1_left, mut x1_right) = get_initial_bisection_values_x(d, x0);
        let mut x1_mid: i128 = (x1_left + x1_right)/2;
    
-       let mut f_left: i128 = get_function_value_1(d, x0, x1_left);
-       let mut f_right: i128 = get_function_value_1(d, x0, x1_right);
+       let mut f_left: i128 = get_function_value_2(d, x0, x1_left);
+       let mut f_right: i128 = get_function_value_2(d, x0, x1_right);
+
    
    
        while abs(x1_left - x1_right) > PRECISION {
-           x1_mid = (x1_left + x1_right)/2;
-           f_mid = get_function_value_1(d, x0, x1_mid);
+           x1_mid = (x1_left + x1_right + 1)/2;
+           f_mid = get_function_value_2(d, x0, x1_mid);
    
            if f_left * f_mid < 0 {
                x1_right = x1_mid;
@@ -213,13 +221,82 @@ pub fn get_function_bisection_zero_x(d: i128, x0: i128, x1: i128) -> i128 {
                x1_left = x1_mid;
            }
            
-           f_left = get_function_value_1(d, x0, x1_left);
-           f_right = get_function_value_1(d, x0, x1_right);
+           f_left = get_function_value_2(d, x0, x1_left);
+           f_right = get_function_value_2(d, x0, x1_right);
            
        }
    
        return x1_mid;
    }
+
+
+   pub fn get_initial_bisection_values_x(d: i128, x0: i128 ) -> (i128, i128) {
+   
+    let x1: i128 = d * d / (2 *x0);
+
+
+    println!("x1 = {}", x1);
+
+    let power: i128;
+
+    if x1 < 100 {
+        power = 0;
+    } 
+    else {
+       let a: i128 = get_order(x1);
+       power = (a + 1) /3;
+    }
+
+    let x1_step: i128 = get_step(power);
+    let mut x1_left: i128 = x1 - x1_step;
+    let mut x1_right: i128 = x1 + x1_step;
+
+   // println!("x1_step = {}, x1_left = {}, x1_right = {}", x1_step, x1_left, x1_right);
+    let mut f1_left: i128 = get_function_value_2(d, x0, x1_left);
+    let mut f1_right: i128 = get_function_value_2(d, x0, x1_right);
+
+    println!("f1 left = {}, f1 right = {}, x1 step = {}", f1_left, f1_right, x1_step);
+
+    while f1_left == f1_right {
+        x1_left -= 1000;
+        x1_right += 1000;
+        f1_left = get_function_value_3(d, x0, x1_left);
+        f1_right = get_function_value_3(d, x0, x1_right);
+    }
+
+    if f1_left > 0 && f1_right > 0  && f1_left > f1_right {
+        println!("loop 1");
+        while  f1_right > 0 {
+            x1_right -= x1_step;
+            f1_right = get_function_value_2(d, x0, x1_right);
+        }
+    }
+    else if f1_left > 0 && f1_right > 0 && f1_left < f1_right  {
+        println!("loop 2");
+        while f1_left > 0 {
+            x1_left -= x1_step;
+            f1_left = get_function_value_2(d, x0, x1_left);
+        }
+    }
+    else if f1_left < 0 && f1_right < 0 && f1_left > f1_right {
+        println!("loop 3");
+        while f1_left < 0 {
+            x1_left += x1_step;
+            f1_left = get_function_value_2(d, x0, x1_left);
+        }
+    }
+    else if f1_left < 0 && f1_right < 0 && f1_left < f1_right {
+        println!("loop 4");
+        while  f1_right < 0 {
+            // x1_right += x1_step;
+            x1_right += 1000;
+            f1_right = get_function_value_2(d, x0, x1_right);
+        }
+    }
+
+    println!("f1 left exit = {}, f1 right exit = {}", f1_left, f1_right );
+    return (x1_left, x1_right);
+}
 
 
 
