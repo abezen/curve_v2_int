@@ -1,45 +1,32 @@
 
 pub mod curve_v2;
 pub mod curve_v2_price;
+pub mod curve_v2_cosmwasm;
+
+
+//use cosmwasm_std::Uint256;
+extern crate num256;
+
+use num256::Int256;
 
 fn main(){
-    let a1: i128 = 80000000000;
-    let a2: i128 = 60000000000;
-    let a3: i128 = 5500000000;
-   // let d: i128 = 24321000000 * 2;
+    let a1: Int256 = Int256::from(8000000000u64);
+    let a2: Int256 = Int256::from(6000000000u64);
+    let a3: Int256 = Int256::from(550000000u64);
+
+    let num: Int256 = Int256::from(5000000u32);
+
+   
     
-   // let d: i128 = curve_v2_1::get_function_bisection_zero_d(a1, a2);
-   // let (l, r) =curve_v2_1::get_initial_bisection_values_d(a1/10, a2/10);
-  //  println!("l, r = {}, {}", l, r);
 
-   // let d: i128 = curve_v2::get_function_bisection_zero_d(a1, a2);
+     let ask_pool: Int256 = curve_v2_cosmwasm::get_ask_amount_bisection(a1.clone(), a3.clone(), a2.clone());
 
-   //  println!("d zero = {}", d);
+     println!("cosm wasm ask amount = {}, new ask pool amount = {} \n ---------------- \n", ask_pool.clone(), a2.clone() - ask_pool.clone());
+
+     let offer_pool: Int256 = curve_v2_cosmwasm::get_offer_amount_bisection(a1, ask_pool, a2);
+     println!("offer amount = {}", offer_pool);
+     
 
      
-   
-   let taylor: i128 = curve_v2_price::get_taylor_int(100);
-   println!("taylor = {}", taylor);
-
-   let fee: i128 = curve_v2_price::fee(a1, a2);
-   println!("fee = {}", fee);
-
-   // Get the Oracle price
-   let (p0, p1) = curve_v2_price::get_price_oracle(100, 10000, 20000, 10500, 21000);
-   println!("p0 = {}, p1 = {}", p0, p1);
-   
-
- // let (x1_left, x1_right) = curve_v2::get_initial_bisection_values_x(d, a1+a3 );
-
- // println!("x1_left = {}, x_right = {}", x1_left, x1_right);
-
- // let x1_zero: i128 = curve_v2::get_function_bisection_zero_x(d, a1 + a3);
- // println!("x1_zero = {}", x1_zero);
-
-  let ask_amount: i128 = curve_v2::get_ask_amount_bisection(a1, a3, a2);
-  println!("ask amount = {}", ask_amount);
-
-  let offer_amount: i128 = curve_v2::get_offer_amount_bisection(a1, ask_amount, a2);
-
-  println!("offer amount = {}", offer_amount);
+  
 }

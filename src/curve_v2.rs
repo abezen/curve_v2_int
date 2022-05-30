@@ -3,9 +3,9 @@ use num::abs;
 
 
 const A: i128 = 1000;
-const PRECISION: i128 = 1000000;
+const PRECISION: i128 = 100;
 const BETA: i128 = 1000;
-const DIV: i128 = 1000000;
+const DIV: i128 = 100000;
 // const TEN_5: i128 = 100000;
 
 
@@ -92,6 +92,8 @@ pub fn get_initial_bisection_values_d(x0: i128, x1: i128) -> (i128, i128) {
             f_right = get_function_value_3(d_left, x0, x1);
         }
     }
+
+  //  println!("final d_left, d_right, f_left, f_right = {}, {}, {}, {}", d_left, d_right, f_left, f_right);
     
     return (d_left, d_right);
 }
@@ -116,8 +118,16 @@ pub fn get_function_bisection_zero_d(x0: i128, x1: i128) -> i128 {
     let mut f_left: i128 = get_function_value_3(d_left, x0, x1);
     let mut f_right: i128 = get_function_value_3(d_right, x0, x1);
     f_mid = get_function_value_3(d_mid, x0, x1);
+    let mut d_mid_last: i128 = 0;
 
-    while abs(f_mid) > PRECISION {
+   // println!("d f_left init = {}, f_right init = {}", f_left, f_right);
+
+   // while abs(f_mid) > PRECISION {
+       while abs(d_mid - d_mid_last) > PRECISION {
+           d_mid_last = d_mid.clone();
+
+         //  println!("d mid last = {}, d left = {}, d right = {} ", d_mid_last, d_left, d_right);
+         //  println!("f mid last = {}, f left = {}, f right = {} \n ", f_mid, f_left, f_right);
         if f_mid == 0  {
             return d_mid;
         }
@@ -132,34 +142,43 @@ pub fn get_function_bisection_zero_d(x0: i128, x1: i128) -> i128 {
 
 
         
-        if f_left > 0 && f_mid > 0 && f_right < 0 && f_mid < f_left {
+      //  if f_left > 0 && f_mid > 0 && f_right < 0 && f_mid <= f_left {
+      //      println!("case 1");
             
+      //      d_left = d_mid;
+      //  }
+      //  else 
+        if f_left > 0 && f_mid > 0 && f_right < 0 && f_mid >= f_left {
+         //   println!("case 2");
             d_left = d_mid;
         }
-        else if f_left > 0 && f_mid > 0 && f_right < 0 && f_mid >= f_left {
-            d_left = d_mid/2;
-        }
 
-        else if f_left < 0 && f_mid > 0 && f_right > 0 && f_mid < f_right {
-            d_right = d_mid;
-        }
+     //   else if f_left < 0 && f_mid > 0 && f_right > 0 && f_mid < f_right {
+     //       println!("case 3");
+      //      d_right = d_mid;
+     //   }
         else if f_left < 0 && f_mid > 0 && f_right > 0 {
-            d_right = d_mid/2;
-        }
-
-        else if f_left > 0 && f_mid < 0 && f_right < 0 && f_mid < f_right {
+          //  println!("case 4");
             d_right = d_mid;
         }
+
+      //  else if f_left > 0 && f_mid < 0 && f_right < 0 && f_mid >= f_right {
+       //     println!("case 5");
+      //      d_right = d_mid;
+      //  }
         else if f_left > 0 && f_mid < 0 && f_right < 0 {
-            d_right = d_mid/2;
+          //  println!("case 6");
+            d_right = d_mid;
         }
 
 
-        else if f_left < 0 && f_mid < 0 && f_right > 0 && f_mid < f_left {
-            d_left = d_mid;
-        }
+      //  else if f_left < 0 && f_mid < 0 && f_right > 0 && f_mid > f_left {
+      //      println!("case 7");
+      //      d_left = d_mid;
+      //  }
         else if f_left < 0 && f_mid < 0 && f_right > 0 {
-            d_left = d_mid/2;
+          //  println!("case 8");
+            d_left = d_mid;
         }
 
         
@@ -194,7 +213,7 @@ pub fn get_function_value_3(da: i128, x0a: i128, x1a: i128) -> i128 {
     } 
 
     if denum1 == 0 || denum2 == 0 {
-        println!("denum1 = {}, denum2 = {}", denum1, denum2);
+      //  println!("denum1 = {}, denum2 = {}", denum1, denum2);
     }
     let denum: i128 = denum1 * denum2 ;
 
@@ -213,7 +232,11 @@ pub fn get_ask_amount_bisection(op1: i128, of1: i128, ap1: i128) -> i128 {
     let ap: i128 = ap1/DIV;
     let of: i128 = of1 / DIV;
 
+    println!("op = {}, ap = {}, of={} /div", op, ap, of);
+
     let d: i128 = get_function_bisection_zero_d(op, ap);
+
+    println!("curve v2 d = {}", d);
 
     let new_ask_pool: i128 = get_function_bisection_zero_x(d, op+of);
 
@@ -241,9 +264,11 @@ pub fn get_function_bisection_zero_x(d: i128, x0: i128) -> i128 {
        let mut f_left: i128 = get_function_value_3(d, x0, x1_left);
        let mut f_right: i128 = get_function_value_3(d, x0, x1_right);
        let mut f_mid: i128 = get_function_value_3(d, x0, x1_mid);
+        let mut x1_mid_last: i128 = 0;
    
-       while abs(f_mid) > PRECISION {
-           
+      // while abs(f_mid) > PRECISION {
+           while abs(x1_mid -x1_mid_last) > PRECISION {
+               x1_mid_last = x1_mid;
           if f_mid == 0 {
             return x1_mid;
         }
