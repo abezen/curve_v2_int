@@ -2,6 +2,7 @@
 pub mod curve_v2;
 pub mod curve_v2_price;
 pub mod curve_v2_cosmwasm;
+pub mod curve_v2_newton;
 
 
 //use cosmwasm_std::Uint256;
@@ -41,24 +42,16 @@ fn main(){
      let ap: i128 = 80000000000;
      let of: i128 = 1500000000;
     
-    let ask: Decimal256 = curve_v2::get_ask_amount_256(op, of, ap);
-    println!("ask amount = {}", ask);
+    let ask: Decimal256 = curve_v2_newton::get_ask_amount_256(op, of, ap);
+    let d_256 = Decimal256::from_atomics(160000000000 as u128, 0);
+     println!("ask amount = {}", ask);
+    
 
-    let ask_i: i128;
-
-    let s1: String = Decimal256::to_string(&ask);
-    if s1.contains(".") {
-        let (left1, right1) = s1.split_once(".").unwrap();
-        ask_i = left1.parse().unwrap();
-    } else {
-        ask_i = s1.parse().unwrap();
-    }
-
-   
-
+    
+    /* 
     let offer: Decimal256 = curve_v2::get_offer_amount(op, ask_i, ap);
     println!("offer = {}", offer);
-
+    */
      
     
 }

@@ -20,10 +20,10 @@ const A_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000u128); // A
 const FOUR: Decimal256 = Decimal256::raw(4_000_000_000_000_000_000u128); // 4
 const TWO: Decimal256 = Decimal256::raw(2_000_000_000_000_000_000u128); // 2
 const GAMMA1: Decimal256 = Decimal256::raw(1001_000_000_000_000_000u128); // GAMMA + 1
-const FOUR1: Decimal256 = Decimal256::raw(250_000_000_000_000_000u128); // 4
+const FOUR1: Decimal256 = Decimal256::raw(250_000_000_000_000_000u128); // 0.25
 // const TEN_5: i128 = 100000;
 const PRECISION_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000_000u128); // precision = 100000
-
+const PRECISION_256_x: Decimal256 = Decimal256::raw(10_000_000_000_000_000_000u128); // precision = 100000
 
 
 pub fn get_sqrt(n: i128) -> i128 {
@@ -66,6 +66,7 @@ pub fn get_initial_values_d_256(x0: Decimal256, x1: Decimal256 ) -> (CurveValue,
 */
 
 pub fn get_initial_values_d_256(x0_i: i128, x1_i: i128) -> (Decimal256, Decimal256) {
+    //println!("FOUR1 = {}", FOUR1, A_256);
     let d0_i: i128 = 2 * get_sqrt(x0_i * x1_i);
 
     let x0: Decimal256 = Decimal256::from_atomics(x0_i as u128, 0).unwrap();
@@ -287,10 +288,10 @@ pub fn get_function_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> 
     let fn_value: Decimal256;
     let fn_pos: bool;
     if fn_right >= fn_left {
-        fn_pos = true;
+        fn_pos = false;
         fn_value = fn_right - fn_left;
     } else {
-        fn_pos = false;
+        fn_pos = true;
         fn_value = fn_left - fn_right;
     }
     let fn_struct= CurveValue {
@@ -342,7 +343,10 @@ pub fn get_function_value_3(da: i128, x0a: i128, x1a: i128, powr: i128) -> i128 
 }
 
 pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
+    println!("FOUR1 = {}, A = {}, GAMMA1 = {}", FOUR1, A_256, GAMMA1);
     let d: Decimal256 = get_function_zero_d_256(op, ap);
+
+    println!("op = {}, of = {}, ap = {}, d = {}", op, of, ap, d);
     let sum: u128 = op as u128 + of as u128;
 
     let x0: Decimal256 =  Decimal256::from_atomics(sum, 0).unwrap();
@@ -350,6 +354,7 @@ pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
 
 
     let x1: Decimal256 = get_function_zero_x_256(d, x0);
+    println!("x0 = {}, x1 = {}, ap = {}", x0, x1, ap);
     let ap_dec: Decimal256 = Decimal256::from_atomics(ap as u128, 0).unwrap(); 
     return ap_dec - x1;
 
@@ -365,6 +370,14 @@ pub fn get_offer_amount(op: i128, aa: i128, ap: i128) -> Decimal256 {
 
     let x0: Decimal256 = get_function_zero_x_256(d, ap_dec - aa_dec);
     return x0 - op_dec;
+}
+
+pub fn get_distance_between_x(v1: Decimal256, v2: Decimal256) -> Decimal256 {
+    if v1 >= v2 {
+        return v1 - v2;
+    } else  {
+        return v2 - v1;
+    }
 }
 
 
@@ -389,6 +402,8 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
     let (mut x1_left_i, mut x1_right_i) = get_initial_bisection_values_x(d_i, x0_i); 
     let mut x1_left = Decimal256::from_atomics(x1_left_i as u128, 0).unwrap();
     let mut x1_right = Decimal256::from_atomics(x1_right_i as u128, 0).unwrap();
+
+    // println!("ask values x1_left = {}, x1_right = {}", x1_left, x1_right);
     
     let mut curve_value_left: CurveValue = get_function_value_256(d, x0, x1_left);
     let mut curve_value_right: CurveValue = get_function_value_256(d, x0, x1_right);
@@ -397,8 +412,12 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
 
     let mut curve_value_mid: CurveValue = get_function_value_256(d, x0, x1_mid);
 
+    println!("f_left = {}, f_left sign = {}, f_right = {}, f_right sign = {}", 
+        curve_value_left.value, curve_value_left.pos, curve_value_right.value, curve_value_right.pos);
 
-    while curve_value_mid.value > PRECISION_256 {
+
+     //while curve_value_mid.value > PRECISION_256 {
+        while get_distance_between_x(x1_left, x1_right) > PRECISION_256_x {
         
         if  curve_value_left.pos == true && curve_value_mid.pos == true && curve_value_right.pos == false {
             x1_left = x1_mid;
@@ -419,6 +438,8 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
         curve_value_mid = get_function_value_256(d, x0, x1_mid);
 
     }
+
+    println!("f_mid = {}, f_mid_sign = {}, x1_mid = {}", curve_value_mid.value, curve_value_mid.pos, x1_mid);
 
 
     return x1_mid;
