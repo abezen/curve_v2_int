@@ -97,9 +97,9 @@ pub fn get_deriv_x1_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> 
     // let b: Decimal256 = x0 - d;
     let c: Decimal256 = GAMMA + ONE;
     let e: Decimal256 = FOUR * x0 / (d * d);
-    let h: Decimal256 = a * b;
+    //let h: Decimal256 = a * b;
     let k: Decimal256 = e * x1;
-
+ 
     let numer1: CurveValue = CurveValue { pos: true, value: TWO * a * c * x1 };
 
     let n: Decimal256 = a * (e * x1 +c);
