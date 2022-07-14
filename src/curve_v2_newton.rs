@@ -1,5 +1,4 @@
 extern crate num;
-use num::{abs, pow};
 use std::cmp;
 
 use cosmwasm_std::Decimal256;
@@ -11,9 +10,9 @@ pub struct CurveValue {
 
 
 const A: i128 = 1000;
-const PRECISION: i128 = 100;
+// const PRECISION: i128 = 100;
 const BETA: i128 = 1000;
-const DIV: i128 = 100000;
+// const DIV: i128 = 100000;
 
 const GAMMA: Decimal256 = Decimal256::raw(1_000_000_000_000_000u128); // GAMMA = 0.001
 const A_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000u128); // A = 100
@@ -25,7 +24,7 @@ const ONE: Decimal256 = Decimal256::raw(1_000_000_000_000_000_000u128); //  1
 // const TWO: Decimal256 = Decimal256::raw(2_000_000_000_000_000_000u128); //  2
 // const TEN_5: i128 = 100000;
 const PRECISION_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000_000u128); // precision = 100000
-const PRECISION_256_x: Decimal256 = Decimal256::raw(10_000_000_000_000_000_000u128); // precision = 100000
+const PRECISION_256_X: Decimal256 = Decimal256::raw(1_000_000_000_000_000_000u128); // precision = 10000
 
 
 pub fn get_sqrt(n: i128) -> i128 {
@@ -61,12 +60,6 @@ pub fn get_step(n: i128) -> i128 {
     return num;
 }
 
-/* 
-pub fn get_initial_values_d_256(x0: Decimal256, x1: Decimal256 ) -> (CurveValue, CurveValue) {
-
-}
-*/
-
 
 
 pub fn get_function_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> CurveValue {
@@ -91,32 +84,34 @@ pub fn get_function_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> 
     return fn_struct;
 }
 
+pub fn get_deriv_value(d: Decimal256, x0: Decimal256, x1: Decimal256) -> Decimal256 {
+    return get_deriv_x1_value_256(d, x0, x1).value;
+}
+
 pub fn get_deriv_x1_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> CurveValue {
     let a: Decimal256 = FOUR * A_256 * x0 * GAMMA * GAMMA / d;
-    println!("x0 -d");
-    // let b: Decimal256 = x0 - d;
+   
     let c: Decimal256 = GAMMA + ONE;
     let e: Decimal256 = FOUR * x0 / (d * d);
-    //let h: Decimal256 = a * b;
     let k: Decimal256 = e * x1;
  
     let numer1: CurveValue = CurveValue { pos: true, value: TWO * a * c * x1 };
 
-    let n: Decimal256 = a * (e * x1 +c);
+    let mut n: Decimal256 = a * (e * x1 +c);
 
-    let numer2: CurveValue;
+    let mut numer2: CurveValue = CurveValue { pos: true, value: ONE };
 
     if x0 >= d {
-        n *= (x0 - d);
+        n *= x0 - d;
         numer2.pos = true;
     } else {
-        n *= (d - x0);
+        n *= d - x0;
         numer2.pos = false;
     }
 
     numer2.value = n;
 
-    let numer: CurveValue;
+    let mut numer: CurveValue = CurveValue { pos: true, value: ONE };
 
     if numer2.pos == true {
         numer.pos = true;
@@ -129,29 +124,30 @@ pub fn get_deriv_x1_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> 
         numer.pos = false;
     }
 
-
-
-    
-
-    let diff: Decimal256;
     let l: Decimal256;
     let sgn: bool;
 
     if c > k {
-        println!("c > k");
         l = c - k;   
         sgn = true; 
     } else {
-        println!("c < k");
         l = k - c;
         sgn = false;
     }
-    let der_value =  (TWO * a * c * x1 + e * h * x1 + c * h) / (l * l * l);
+   
+    let der_value: Decimal256 = numer.value / (l * l * l);
 
-    let der_struct= CurveValue {
-        pos: sgn,
-        value: der_value
-    };
+    let mut der_struct: CurveValue = CurveValue { pos: true, value: ONE };
+    
+    if (numer.pos == true && sgn == true) || (numer.pos == false && sgn == false) {
+        der_struct.pos = true;
+    } else {
+        der_struct.pos = false;
+    }
+    der_struct.value = der_value;
+
+    
+
     return der_struct;
 }
 
@@ -161,10 +157,10 @@ pub fn get_newton_step(func: CurveValue, der: CurveValue, x: Decimal256) -> Deci
     let x1: Decimal256;
 
     if (func.pos  == true && der.pos == false) || (func.pos == false && der.pos == true) {
-        println!("x1 false");
+       
         x1 = x + frac;
     } else {
-        println!("x1 true");
+        
         x1 = x - frac;
     }
 
@@ -173,15 +169,43 @@ pub fn get_newton_step(func: CurveValue, der: CurveValue, x: Decimal256) -> Deci
 
 
 pub fn get_next_newton_x1(d: Decimal256, x0: Decimal256) -> Decimal256 {
-    let x1_prev: Decimal256 = d * d /( FOUR * x0);
 
-    let f_next: CurveValue = get_function_value_256(d, x0, x1_prev);
-    let d_next: CurveValue = get_deriv_x1_value_256(d, x0, x1_prev);
+    let mut x1_next: Decimal256;
+    let mut x1_prev: Decimal256 = d * d /( FOUR * x0);
+    let mut f_next: CurveValue = get_function_value_256(d, x0, x1_prev);
+    let mut d_next: CurveValue = get_deriv_x1_value_256(d, x0, x1_prev);
 
-    let x1_next: Decimal256 = get_newton_step(f_next, d_next, x1_prev);
+    x1_next = get_newton_step(f_next, d_next, x1_prev);
 
+    let mut delta: Decimal256;
+
+    if x1_next >= x1_prev {
+        delta = x1_next - x1_prev;
+    } else {
+        delta = x1_prev - x1_next;
+    }
+
+    while delta > PRECISION_256_X {
+        x1_prev = x1_next;
+
+        f_next = get_function_value_256(d, x0, x1_prev);
+        d_next = get_deriv_x1_value_256(d, x0, x1_prev);
+
+        x1_next = get_newton_step(f_next, d_next, x1_prev);
+
+        if x1_next >= x1_prev {
+            delta = x1_next - x1_prev;
+        } else {
+            delta = x1_prev - x1_next;
+        }
+    }
+        
     return x1_next;
+
+    
 }
+    
+
 
 
 
@@ -189,51 +213,32 @@ pub fn get_next_newton_x1(d: Decimal256, x0: Decimal256) -> Decimal256 {
 
 
 pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
-    println!("FOUR1 = {}, A = {}, GAMMA1 = {}", FOUR1, A_256, GAMMA1);
+    
     let d: Decimal256 = get_function_zero_d_256(op, ap);
-
-    println!("op = {}, of = {}, ap = {}, d = {}", op, of, ap, d);
     let sum: u128 = op as u128 + of as u128;
 
     let x0: Decimal256 =  Decimal256::from_atomics(sum, 0).unwrap();
-   
-
-
-    // let x1: Decimal256 = get_nextzero_x_256(d, x0);
     let x1: Decimal256 = get_next_newton_x1(d, x0);
-    println!("x0 = {}, x1 = {}, ap = {}", x0, x1, ap);
     let ap_dec: Decimal256 = Decimal256::from_atomics(ap as u128, 0).unwrap(); 
     return ap_dec - x1;
-
 }
 
-/* 
+
 pub fn get_offer_amount(op: i128, aa: i128, ap: i128) -> Decimal256 {
     let d: Decimal256 = get_function_zero_d_256(op, ap);
-   
-
     let op_dec: Decimal256 = Decimal256::from_atomics(op as u128, 0).unwrap();
     let aa_dec: Decimal256 = Decimal256::from_atomics(aa as u128, 0).unwrap();
     let ap_dec: Decimal256 = Decimal256::from_atomics(ap as u128,0).unwrap();
 
-    let x0: Decimal256 = get_function_zero_x_256(d, ap_dec - aa_dec);
+    let x0: Decimal256 = get_next_newton_x1(d, ap_dec - aa_dec);
     return x0 - op_dec;
 }
 
-pub fn get_distance_between_x(v1: Decimal256, v2: Decimal256) -> Decimal256 {
-    if v1 >= v2 {
-        return v1 - v2;
-    } else  {
-        return v2 - v1;
-    }
-}
-
-*/
 
 
 pub fn get_function_zero_d_256(x0i: i128, x1i: i128) -> Decimal256 {
      
-    let (mut d_left_i, mut d_right_i) = get_initial_bisection_values_d(x0i, x1i);
+    let (d_left_i, d_right_i) = get_initial_bisection_values_d(x0i, x1i);
     
     
     let x0: Decimal256 = Decimal256::from_atomics(x0i as u128, 0).unwrap();
@@ -253,16 +258,11 @@ pub fn get_function_zero_d_256(x0i: i128, x1i: i128) -> Decimal256 {
     d_right = Decimal256::from_atomics(d_right_i as u128, 0).unwrap();
 
     curve_value_left = get_function_value_256(d_left, x0, x1);
-
-   
     curve_value_right = get_function_value_256(d_right, x0, x1);
    
     let mut d_mid: Decimal256 = (d_left + d_right)/TWO;
-   
     let mut curve_value_mid: CurveValue = get_function_value_256(d_mid, x0, x1);
 
-    
-     
     while curve_value_mid.value > PRECISION_256 {
         if curve_value_mid.value <= PRECISION_256 {
             return d_mid;
@@ -287,8 +287,6 @@ pub fn get_function_zero_d_256(x0i: i128, x1i: i128) -> Decimal256 {
         curve_value_mid = get_function_value_256(d_mid, x0, x1);
 
     }
-    
-
     return d_mid;
 
 }
@@ -300,9 +298,9 @@ pub fn get_initial_bisection_values_d(x0: i128, x1: i128) -> (i128, i128) {
     let order_d: i128 = find_number_order(d0);
     let order_x0: i128 = find_number_order(x0);
     let order_x1: i128 = find_number_order(x1);
-    let order_A: i128 = find_number_order(A);
+    let order_a: i128 = find_number_order(A);
     let order_xd: i128 = find_number_order(x0 + x1 - d0);
-    let total_order: i128 = order_A + order_d + order_x0 + order_x1 + order_xd;
+    let total_order: i128 = order_a + order_d + order_x0 + order_x1 + order_xd;
 
     let order: i128 = cmp::max((total_order - 36) / 5 + 1, 0);
   

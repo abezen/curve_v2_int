@@ -1,5 +1,5 @@
 extern crate num;
-use num::{abs, pow};
+// use num::{abs, pow};
 use std::cmp;
 
 use cosmwasm_std::Decimal256;
@@ -11,9 +11,9 @@ pub struct CurveValue {
 
 
 const A: i128 = 1000;
-const PRECISION: i128 = 100;
+// const PRECISION: i128 = 100;
 const BETA: i128 = 1000;
-const DIV: i128 = 100000;
+//const DIV: i128 = 100000;
 
 const GAMMA: Decimal256 = Decimal256::raw(1_000_000_000_000_000u128); // GAMMA = 0.001
 const A_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000u128); // A = 100
@@ -23,7 +23,7 @@ const GAMMA1: Decimal256 = Decimal256::raw(1001_000_000_000_000_000u128); // GAM
 const FOUR1: Decimal256 = Decimal256::raw(250_000_000_000_000_000u128); // 0.25
 // const TEN_5: i128 = 100000;
 const PRECISION_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000_000u128); // precision = 100000
-const PRECISION_256_x: Decimal256 = Decimal256::raw(10_000_000_000_000_000_000u128); // precision = 100000
+const PRECISION_256_X: Decimal256 = Decimal256::raw(10_000_000_000_000_000_000u128); // precision = 100000
 
 
 pub fn get_sqrt(n: i128) -> i128 {
@@ -155,9 +155,9 @@ pub fn get_initial_bisection_values_d(x0: i128, x1: i128) -> (i128, i128) {
     let order_d: i128 = find_number_order(d0);
     let order_x0: i128 = find_number_order(x0);
     let order_x1: i128 = find_number_order(x1);
-    let order_A: i128 = find_number_order(A);
+    let order_a: i128 = find_number_order(A);
     let order_xd: i128 = find_number_order(x0 + x1 - d0);
-    let total_order: i128 = order_A + order_d + order_x0 + order_x1 + order_xd;
+    let total_order: i128 = order_a + order_d + order_x0 + order_x1 + order_xd;
 
     let order: i128 = cmp::max((total_order - 36) / 5 + 1, 0);
   
@@ -218,7 +218,7 @@ pub fn get_initial_bisection_values_d(x0: i128, x1: i128) -> (i128, i128) {
 
 pub fn get_function_zero_d_256(x0i: i128, x1i: i128) -> Decimal256 {
      
-    let (mut d_left_i, mut d_right_i) = get_initial_bisection_values_d(x0i, x1i);
+    let (d_left_i, d_right_i) = get_initial_bisection_values_d(x0i, x1i);
     
     
     let x0: Decimal256 = Decimal256::from_atomics(x0i as u128, 0).unwrap();
@@ -227,7 +227,7 @@ pub fn get_function_zero_d_256(x0i: i128, x1i: i128) -> Decimal256 {
     let mut curve_value_left: CurveValue;
     let mut curve_value_right: CurveValue;
 
-    let mut f_mid: Decimal256;
+    // let mut f_mid: Decimal256;
 
     let mut d_left: Decimal256;
     let mut d_right: Decimal256;
@@ -343,10 +343,10 @@ pub fn get_function_value_3(da: i128, x0a: i128, x1a: i128, powr: i128) -> i128 
 }
 
 pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
-    println!("FOUR1 = {}, A = {}, GAMMA1 = {}", FOUR1, A_256, GAMMA1);
+   
     let d: Decimal256 = get_function_zero_d_256(op, ap);
 
-    println!("op = {}, of = {}, ap = {}, d = {}", op, of, ap, d);
+    
     let sum: u128 = op as u128 + of as u128;
 
     let x0: Decimal256 =  Decimal256::from_atomics(sum, 0).unwrap();
@@ -354,7 +354,7 @@ pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
 
 
     let x1: Decimal256 = get_function_zero_x_256(d, x0);
-    println!("x0 = {}, x1 = {}, ap = {}", x0, x1, ap);
+    
     let ap_dec: Decimal256 = Decimal256::from_atomics(ap as u128, 0).unwrap(); 
     return ap_dec - x1;
 
@@ -387,7 +387,7 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
     let mut s: String = Decimal256::to_string(&d);
     let d_i: i128;
     if s.contains(".") {
-    let (mut left, mut right) = s.split_once(".").unwrap();
+    let (left, right) = s.split_once(".").unwrap();
      d_i = left.parse().unwrap();
     } else {
         d_i = s.parse().unwrap();
@@ -399,7 +399,7 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
     let x0_i: i128 = s.parse().unwrap();
 
 
-    let (mut x1_left_i, mut x1_right_i) = get_initial_bisection_values_x(d_i, x0_i); 
+    let (x1_left_i, x1_right_i) = get_initial_bisection_values_x(d_i, x0_i); 
     let mut x1_left = Decimal256::from_atomics(x1_left_i as u128, 0).unwrap();
     let mut x1_right = Decimal256::from_atomics(x1_right_i as u128, 0).unwrap();
 
@@ -412,12 +412,11 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
 
     let mut curve_value_mid: CurveValue = get_function_value_256(d, x0, x1_mid);
 
-    println!("f_left = {}, f_left sign = {}, f_right = {}, f_right sign = {}", 
-        curve_value_left.value, curve_value_left.pos, curve_value_right.value, curve_value_right.pos);
+    
 
 
      //while curve_value_mid.value > PRECISION_256 {
-        while get_distance_between_x(x1_left, x1_right) > PRECISION_256_x {
+        while get_distance_between_x(x1_left, x1_right) > PRECISION_256_X {
         
         if  curve_value_left.pos == true && curve_value_mid.pos == true && curve_value_right.pos == false {
             x1_left = x1_mid;
@@ -439,7 +438,7 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
 
     }
 
-    println!("f_mid = {}, f_mid_sign = {}, x1_mid = {}", curve_value_mid.value, curve_value_mid.pos, x1_mid);
+    
 
 
     return x1_mid;
@@ -458,9 +457,9 @@ pub fn get_function_zero_x_256(d: Decimal256, x0: Decimal256) -> Decimal256 {
     let order_d: i128 = find_number_order(d);
     let order_x0: i128 = find_number_order(x0);
     let order_x1: i128 = find_number_order(x1);
-    let order_A: i128 = find_number_order(A);
+    let order_a: i128 = find_number_order(A);
     let order_xd: i128 = find_number_order(x0 + x1 - d);
-    let total_order: i128 = order_A + order_d + order_x0 + order_x1 + order_xd;
+    let total_order: i128 = order_a + order_d + order_x0 + order_x1 + order_xd;
     let order: i128 = cmp::max((total_order - 36) / 4 + 1, 0);
     let powr: i128 = num::pow(10, order as usize);
    
