@@ -17,6 +17,7 @@ const BETA: i128 = 1000;
 const GAMMA: Decimal256 = Decimal256::raw(1_000_000_000_000_000u128); // GAMMA = 0.001
 const A_256: Decimal256 = Decimal256::raw(100_000_000_000_000_000_000u128); // A = 100
 const FOUR: Decimal256 = Decimal256::raw(4_000_000_000_000_000_000u128); // 4
+const THREE: Decimal256 = Decimal256::raw(3_000_000_000_000_000_000u128); // 3 
 const TWO: Decimal256 = Decimal256::raw(2_000_000_000_000_000_000u128); // 2
 const GAMMA1: Decimal256 = Decimal256::raw(1001_000_000_000_000_000u128); // GAMMA + 1
 const FOUR1: Decimal256 = Decimal256::raw(250_000_000_000_000_000u128); // 0.25
@@ -206,7 +207,13 @@ pub fn get_next_newton_x1(d: Decimal256, x0: Decimal256) -> Decimal256 {
 }
     
 
-
+pub fn get_delta(x_prev: Decimal256, x_next: Decimal256) -> Decimal256 {
+    if x_next >= x_prev {
+        return x_next - x_prev;
+    } else {
+        return x_prev - x_next;
+    }
+}
 
 
 
@@ -215,6 +222,7 @@ pub fn get_next_newton_x1(d: Decimal256, x0: Decimal256) -> Decimal256 {
 pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
     
     let d: Decimal256 = get_function_zero_d_256(op, ap);
+    println!("v2 get ask amount d = {}", d);
     let sum: u128 = op as u128 + of as u128;
 
     let x0: Decimal256 =  Decimal256::from_atomics(sum, 0).unwrap();
@@ -226,12 +234,53 @@ pub fn get_ask_amount_256(op: i128, of: i128, ap: i128) -> Decimal256 {
 
 pub fn get_offer_amount(op: i128, aa: i128, ap: i128) -> Decimal256 {
     let d: Decimal256 = get_function_zero_d_256(op, ap);
+    println!("v2 get offer amount d = {}", d);
     let op_dec: Decimal256 = Decimal256::from_atomics(op as u128, 0).unwrap();
     let aa_dec: Decimal256 = Decimal256::from_atomics(aa as u128, 0).unwrap();
     let ap_dec: Decimal256 = Decimal256::from_atomics(ap as u128,0).unwrap();
 
     let x0: Decimal256 = get_next_newton_x1(d, ap_dec - aa_dec);
+    
     return x0 - op_dec;
+}
+
+
+pub fn get_newton_d(op: i128, ap: i128) -> Decimal256 {
+    let d0_i: i128 = 2 * get_sqrt(ap * op);
+
+    let x0: Decimal256 = Decimal256::from_atomics(op as u128, 0).unwrap();
+    let x1: Decimal256 = Decimal256::from_atomics(ap as u128, 0 ).unwrap();
+
+    println!("get_newton_d 1");
+    let mut d_prev: Decimal256 = Decimal256::from_atomics(d0_i as u128, 0).unwrap();
+    let mut d_next: Decimal256;
+
+    
+
+    let mut fn_next: CurveValue = get_function_value_256(d_prev, x0, x1);
+    println!("get_newton_d 2");
+    let mut der_next: CurveValue = get_deriv_d_value_256(d_prev, x0, x1);
+    println!("get_newton_d 3");
+    d_next = get_newton_step(fn_next, der_next, d_prev);
+
+    println!("get_newton_d 4");
+
+    let mut delta: Decimal256 = get_delta(d_prev, d_next);
+
+    while delta > PRECISION_256_X {
+        d_prev = d_next;
+
+        fn_next = get_function_value_256(d_prev, x0, x1);
+        der_next = get_deriv_d_value_256(d_prev, x0, x1);
+
+        d_next = get_newton_step(fn_next, der_next, d_prev);
+
+        delta = get_delta(d_prev, d_next);
+    }
+
+    return d_next;
+
+
 }
 
 
@@ -396,8 +445,95 @@ pub fn find_number_order(n: i128) -> i128 {
     return order;
 }
 
+//----------------------------------------
+pub fn get_deriv_d_value_256(d: Decimal256, x0: Decimal256, x1: Decimal256) -> CurveValue {
+    let a: Decimal256 = FOUR * x0 * x1;
+    let b: Decimal256 = GAMMA1;
+    let c: Decimal256 = a * A_256 * GAMMA * GAMMA;
+    let s: Decimal256 = x0 + x1;
+    let n: Decimal256 = c * s;
+    let d2: Decimal256 = d * d;
+    let e: Decimal256 = b * n * d2 + THREE * a * n;
+    let m: Decimal256 = FOUR * c * a * d;
 
- 
+    let numer_value: Decimal256;
+    let numer_pos: bool;
+
+    println!("get_newton_d deriv 11");
+
+    if m >= e {
+        numer_pos = true;
+        numer_value = d2 * (m - e);
+    } else {
+        numer_pos = false;
+        numer_value = d2 * (e - m);
+    }
+
+    println!("get_newton_d deriv 12");
+
+    //let curve1: CurveValue = CurveValue { pos: numer_pos, value: numer_value };
+
+    println!("get_newton_d deriv 1");
+
+    let denom_pos: bool;
+    let denom_value: Decimal256;
+    let bd: Decimal256 = b * d2;
+
+    if bd >= a {
+        denom_pos = true;
+        denom_value = bd - a;
+    } else {
+        denom_pos = false;
+        denom_value = a - bd; 
+    }
+
+    println!("get_newton_d deriv 2");
+
+    let frac_pos: bool;
+    let frac_value: Decimal256 = numer_value / denom_value;
+
+    println!("get_newton_d deriv 3");
+
+    if (numer_pos == true && denom_pos == true) || (numer_pos == false && denom_pos == false) {
+        frac_pos = true;
+    } 
+    else {
+        frac_pos = false;
+    }
+
+    let d_by_2: Decimal256 = d / TWO;
+
+    let deriv_pos: bool;
+    let deriv_value: Decimal256;
+
+    println!("get_newton_d deriv 4");
+
+    if frac_pos == true && frac_value >= d_by_2 {
+        deriv_value = frac_value - d_by_2;
+        deriv_pos = true;
+    } else if frac_pos == false && frac_value >= d_by_2 {
+        deriv_value = frac_value + d_by_2;
+        deriv_pos = false;
+    } else if frac_pos == true && frac_value < d_by_2 {
+        deriv_value = d_by_2 - frac_value;
+        deriv_pos = false;
+    } else {
+        deriv_value = frac_value + d_by_2;
+        deriv_pos = false;
+    }
+    println!("get_newton_d deriv 5");
+
+    let deriv: CurveValue = CurveValue { pos: deriv_pos, value: deriv_value };
+
+    return deriv;
+
+
+}
+
+
+pub fn get_deriv_d_value(d: Decimal256, x0: Decimal256, x1: Decimal256) -> Decimal256 {
+    return get_deriv_d_value_256(d, x0, x1).value;
+}
 
 
 
