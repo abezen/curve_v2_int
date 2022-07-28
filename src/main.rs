@@ -4,6 +4,7 @@ pub mod curve_v2_price;
 pub mod curve_v2_newton;
 pub mod curve_v1;
 use cosmwasm_std::Decimal256;
+pub mod curve_v2_newton2;
 
 fn main(){
      let op: i128 = 80000000000;
@@ -44,7 +45,8 @@ fn main(){
     let offer_amount_v1: Decimal256 = curve_v1::get_offer_amount(op, ask_amount_i128_v1, ap);
     println!("V1 offer amount = {}", offer_amount_v1);
 
-    
+    let (der, pos) = curve_v2_newton2:: get_deriv_d_value(d, x0, x1);
+    println!("newton 2 deriv = {}, pos = {}", der, pos);    
 }
 
 pub fn convert_decimal_to_u128(n: Decimal256) -> i128 {
